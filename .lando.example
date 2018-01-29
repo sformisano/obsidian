@@ -1,0 +1,17 @@
+name: demosite
+recipe: wordpress
+config:
+  webroot: web
+  xdebug: true
+services:
+  nodeserver:
+    type: node:8
+    globals:
+      grunt-cli: "latest"
+tooling:
+  npm:
+    service: nodeserver
+  node:
+    service: nodeserver
+  grunt:
+    service: nodeserver

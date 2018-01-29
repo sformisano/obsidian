@@ -1,0 +1,72 @@
+# Instructions:
+# - set 'SSH_PASS' as secret variable on the repository (url: https://gitlab.com/USERNAME/REPOSITORY_NAME/settings/ci_cd )
+# - set the appropriate values for the variables defined in this yaml file
+# - enjoy!
+variables:
+  SSH_USER: DEFINE_ME # e.g. "project_ssh_user"
+  SSH_HOST: DEFINE_ME # e.g. "project.com"
+  STAGING_DIR: DEFINE_ME # e.g. "staging.project.com"
+  PRODUCTION_DIR: DEFINE_ME # e.g. "httpdocs"
+  THEME_DIR: DEFINE_ME # e.g. "project-theme"
+
+stages:
+  - build
+  - deploy
+
+download_composer_dependencies:
+  stage: build
+  image: php:7.0
+  only:
+  - staging
+  - master
+  artifacts:
+    untracked: true
+  script:
+  - apt-get -qq -y update && apt-get -qq -y install wget zip git
+  - wget https://composer.github.io/installer.sig -O - -q | tr -d '\n' > installer.sig
+  - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  - php -r "if (hash_file('SHA384', 'composer-setup.php') === file_get_contents('installer.sig')) { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+  - php composer-setup.php
+  - php -r "unlink('composer-setup.php'); unlink('installer.sig');"
+  - php composer.phar install --no-ansi --no-dev --no-interaction --no-progress --optimize-autoloader --no-scripts
+
+build_theme:
+  stage: build
+  image: node:6.10.3
+  only:
+  - staging
+  - master
+  artifacts:
+    untracked: true
+  script:
+  - cd "web/app/themes/$THEME_DIR"
+  - npm config set loglevel warn
+  - npm install && npm install -g bower && npm install -g gulp && bower install --allow-root && gulp --production
+
+deploy_staging:
+  stage: deploy
+  image: ubuntu:latest
+  only:
+  - staging
+  script:
+  - apt-get -qq -y update && apt-get -qq -y install sshpass rsync
+  - rm -rf .bundle
+  - rm composer.phar
+  - rm -rf "web/app/uploads"
+  - ln -s ../shared/staging/.env .env
+  - ln -s ../../../shared/staging/uploads web/app/uploads
+  - sshpass -p "$SSH_PASS" rsync --delete --exclude web/.htaccess -rzl -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' . $SSH_USER@$SSH_HOST:$STAGING_DIR
+
+deploy_production:
+  stage: deploy
+  image: ubuntu:latest
+  only:
+  - master
+  script:
+  - apt-get -qq -y update && apt-get -qq -y install sshpass rsync
+  - rm -rf .bundle
+  - rm composer.phar
+  - rm -rf "web/app/uploads"
+  - ln -s ../shared/production/.env .env
+  - ln -s ../../../shared/production/uploads web/app/uploads
+  - sshpass -p "$SSH_PASS" rsync --delete --exclude web/.htaccess -rzl -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' . $SSH_USER@$SSH_HOST:$PRODUCTION_DIR

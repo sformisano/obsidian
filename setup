@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+printf "\n"
+echo "**********************************"
+echo "** Obsidian WordPress Installer **"
+echo "**********************************"
+
+if [ -f .lando.yml ]; then
+  printf "\nA .lando.yml file already exists in this directory. Please delete all files and containers from the previous installation if you want to start over.\n\n"
+  exit
+fi
+
+printf "\n1. Enter the lando site local subdomain Name (it will generate url http://your-subdomain.lndo.site):\n"
+read -e sitename
+
+printf "\n2. Enter your WordPress username:\n"
+read -e username
+
+printf "\n3. Enter your WordPress password:\n"
+read -e password
+
+printf "\n4. Enter your WordPress user email address:\n"
+read -e email
+
+printf "\nOk! Time to setup your new WordPress website!\n\n"
+
+# Site local url
+url="http://$sitename.lndo.site"
+
+# Generate .lando.yml file
+cp .lando.example .lando.yml
+sed -i -e "s/demosite/$sitename/g" .lando.yml
+
+# Start up the site
+lando start
+
+# Install dependencies
+lando composer install
+
+# Copy and adjust the env file
+cp .env.lando .env
+sed -i -e "s#demosite#$url#g" .env
+
+# Install WordPress
+lando wp core install --url="$url" --title="$sitename" --admin_user="$username" --admin_password="$password" --admin_email="$email"
+
+# Replace obisian readme with site specific readme (only with lando start info)
+rm README.md
+mv README-SITE.md README.md
+
+# Remove .git directory, this is now a standalone project, no need for obsidian repo info
+rm -rf .git
+
+# TODO pick a default theme, add it to composer.json and activate it here
+# lando wp theme activate DEFAULT_THEME_HERE
+
+# Install the node modules.
+# npm i
+# TODO Setup Default Theme
+# cd web/app/themes/DEFAULT_THEME_HERE && lando npm i && lando gulp
+
+printf "\nYour new WordPress site is ready!.\n"
+echo "Username: $username"
+echo "Password: $password"
+echo "Email: $email"

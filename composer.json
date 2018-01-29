@@ -1,0 +1,54 @@
+{
+  "name": "sformisano/obsidian",
+  "description": "Obsidian WordPress Starter Kit",
+  "type": "project",
+  "license": "GPL-2.0+",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "authors": [
+    {
+      "name": "Salvatore Formisano",
+      "email": "hello@salvatoreformisano.com"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://wpackagist.org"
+    }
+  ],
+  "require": {
+    "composer/installers": "^1.4",
+    "roots/bedrock": "1.8.5",
+    "roots/soil": "3.7.3",
+    "slowprog/composer-copy-file": "~0.2",
+    "wpackagist-plugin/autoptimize": "2.2.2",
+    "wpackagist-plugin/debug-bar": "0.9",
+    "wpackagist-plugin/google-analytics-dashboard-for-wp": "5.1.2.4",
+    "wpackagist-plugin/ninja-forms": "3.2.6",
+    "wpackagist-plugin/wordpress-seo": "5.9.3",
+    "wpackagist-plugin/wp-seo-structured-data-schema": "2.3"
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "SlowProg\\CopyFile\\ScriptHandler::copy"
+    ],
+    "post-update-cmd": [
+      "SlowProg\\CopyFile\\ScriptHandler::copy"
+    ]
+  },
+  "extra": {
+    "installer-paths": {
+      "web/app/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
+      "web/app/plugins/{$name}/": ["type:wordpress-plugin"],
+      "web/app/themes/{$name}/": ["type:wordpress-theme"]
+    },
+    "wordpress-install-dir": "web/wp",
+    "copy-file": {
+      "vendor/roots/bedrock/config": "config/",
+      "vendor/roots/bedrock/web/app": "web/app",
+      "vendor/roots/bedrock/web/index.php": "web/",
+      "vendor/roots/bedrock/web/wp-config.php": "web/"
+    }
+  }
+}
