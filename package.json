@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "license": "GPL-2.0",
   "scripts": {
-    "setup": "chmod +x setup && ./setup"
+    "setup": "chmod +x setup && ./setup",
+    "start": "lando start"
   },
   "devDependencies": {
   }
